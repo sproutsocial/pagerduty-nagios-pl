@@ -36,7 +36,7 @@ use HTTP::Status qw(is_client_error);
 use LWP::UserAgent;
 use File::Path;
 use Fcntl qw(:flock);
-use Sys::Hostname;
+use Net::Domain qw(hostfqdn);
 
 # NEW FEATURES WERE DEVELOPED AGAINST PERL v 5.18
 #################################################################################
@@ -175,6 +175,8 @@ sub is_variable_allowed {
 	my ($variable_name, $variable_value) = @_;
 	my $is_allowed_var = 1;
 
+	no warnings; # ~~ (search for an element in an array) is "experimental", don't warn about it.
+
 	# First, check if it's an empty string.
 	if ($variable_value eq "") {
 		print STDERR "Skipping key $variable_name because its value is empty.\n" if $opt_verbose;
@@ -222,6 +224,7 @@ sub filter_fields_for_service_type {
 
 	my $k;
 	foreach $k (keys %events_hash) {
+		no warnings; # ~~ (search for an element in an array) is "experimental", don't warn about it.
 		if ($k ~~ @delete_when_service) {
 			print STDERR "Removing key $k because it is \@delete_when_service\n" if $opt_verbose;
 			delete $events_hash{$k};
@@ -379,7 +382,7 @@ sub enqueue_event {
 	# Apply any other variables that were passed in.
 	%event = (%event, %opt_fields);
 	# Add in the local hostname to the fields (useful for figuring out which Nagios instance generated this event)
-	$event{"NAGIOS_SERVER"} = hostname;
+	$event{"NAGIOS_SERVER"} = hostfqdn();
 
 	$event{"pd_version"} = "1.0";
 
